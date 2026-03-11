@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: retargeting-app
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: retargeting-db
+          property: connectionString
+
+databases:
+  - name: retargeting-db

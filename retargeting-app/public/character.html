@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Character wählen</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+
+    <div class="hero fade-in">
+      <div>
+        <h1>Wähle deinen Character</h1>
+        <p class="sub">
+          Wähle spontan die Rolle, die am ehesten zu dir passt.
+        </p>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="character-grid">
+        <div class="character-card" data-c="Scholar">
+          <h2>Scholar</h2>
+          <p class="small">analytisch, wissensorientiert, reflektiert</p>
+        </div>
+        <div class="character-card" data-c="Entrepreneur">
+          <h2>Entrepreneur</h2>
+          <p class="small">ehrgeizig, zielorientiert, wirtschaftlich denkend</p>
+        </div>
+        <div class="character-card" data-c="Activist">
+          <h2>Activist</h2>
+          <p class="small">kritisch, engagiert, gesellschaftlich interessiert</p>
+        </div>
+        <div class="character-card" data-c="Influencer">
+          <h2>Influencer</h2>
+          <p class="small">kreativ, sichtbar, sozial und medial aktiv</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <a class="btn primary" href="/survey-anon.html">Weiter zur anonymen Umfrage</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script>
+    const cards = document.querySelectorAll(".character-card");
+
+    cards.forEach(card => {
+      card.addEventListener("click", async () => {
+        cards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+
+        const character = card.getAttribute("data-c");
+        await RR.trackFirstEvent("character_click_" + character);
+        await RR.apiPost("/api/character/set", { character });
+      });
+    });
+  </script>
+</body>
+</html>

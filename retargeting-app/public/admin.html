@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – Auswertung</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+
+    <div class="hero fade-in">
+      <div>
+        <h1>Admin-Auswertung</h1>
+        <p class="sub">Übersicht, Trefferquote, Merkmalsanalyse und CSV-Export.</p>
+      </div>
+      <div class="badge">nur für dich</div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="row">
+        <button id="refresh" class="primary">Aktualisieren</button>
+        <a class="btn" href="/api/admin/export.csv">CSV exportieren</a>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <h2>Kennzahlen</h2>
+      <div id="stats" class="small">Lade Daten…</div>
+    </div>
+
+    <div class="card fade-in">
+      <h2>Top-Merkmale</h2>
+      <div id="topKeys" class="small">Lade Daten…</div>
+    </div>
+
+    <div class="card fade-in">
+      <h2>Matches</h2>
+      <div id="tableWrap" class="small">Lade Daten…</div>
+    </div>
+  </div>
+
+  <script>
+    function esc(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    async function loadStats() {
+      const r = await fetch("/api/admin/stats");
+      return r.json();
+    }
+
+    async function loadOverview() {
+      const r = await fetch("/api/admin/overview");
+      return r.json();
+    }
+
+    function renderStats(data) {
+      const accuracy = data.accuracy === null ? "—" : data.accuracy + "%";
+      document.getElementById("stats").innerHTML = `
+        <div>Sessions: <b>${data.counts.sessions}</b></div>
+        <div>Anonyme Antworten: <b>${data.counts.anon}</b></div>
+        <div>Persönliche Antworten: <b>${data.counts.personal}</b></div>
+        <div>Matches: <b>${data.counts.matches}</b></div>
+        <div>Trefferquote: <b>${accuracy}</b> (${data.correct} / ${data.total})</div>
+      `;
+    }
+
+    function renderTopKeys(topKeys) {
+      if (!topKeys.length) {
+        document.getElementById("topKeys").innerHTML = "Noch keine Daten vorhanden.";
+        return;
+      }
+
+      document.getElementById("topKeys").innerHTML = topKeys.map(k => `
+        <div class="card" style="padding:12px; margin:10px 0;">
+          <b>${esc(k.key)}</b><br>
+          <span class="small">Treffer: ${k.matchTrue}, Nicht-Treffer: ${k.matchFalse}, Gesamt: ${k.total}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderMatchesTable(data) {
+      const matches = data.matches ?? [];
+      const personals = new Map((data.personals ?? []).map(p => [p.id, p]));
+      const anons = new Map((data.anons ?? []).map(a => [a.id, a]));
+
+      if (!matches.length) {
+        document.getElementById("tableWrap").innerHTML = "Noch keine Matches vorhanden.";
+        return;
+      }
+
+      const html = `
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:8px;">Zeit</th>
+              <th style="text-align:left; padding:8px;">Name</th>
+              <th style="text-align:left; padding:8px;">Score</th>
+              <th style="text-align:left; padding:8px;">Korrekt</th>
+              <th style="text-align:left; padding:8px;">Treffer-Merkmale</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${matches.map(m => {
+              const p = personals.get(m.personal_id);
+              const a = anons.get(m.anon_id);
+              const isCorrect = p && a && p.session_id === a.session_id ? "✅" : "❌";
+              const matchedKeys = (m.rationale_json ?? [])
+                .filter(r => r.match)
+                .map(r => r.key)
+                .join(", ");
+
+              return `
+                <tr>
+                  <td style="padding:8px; border-top:1px solid rgba(255,255,255,0.08);">${esc(m.created_at)}</td>
+                  <td style="padding:8px; border-top:1px solid rgba(255,255,255,0.08);">${esc(p?.name ?? "")}</td>
+                  <td style="padding:8px; border-top:1px solid rgba(255,255,255,0.08);">${esc(m.score)}</td>
+                  <td style="padding:8px; border-top:1px solid rgba(255,255,255,0.08);">${isCorrect}</td>
+                  <td style="padding:8px; border-top:1px solid rgba(255,255,255,0.08);">${esc(matchedKeys)}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById("tableWrap").innerHTML = html;
+    }
+
+    async function refreshAll() {
+      const [stats, overview] = await Promise.all([
+        loadStats(),
+        loadOverview()
+      ]);
+
+      renderStats(stats);
+      renderTopKeys(stats.topKeys);
+      renderMatchesTable(overview);
+    }
+
+    document.getElementById("refresh").addEventListener("click", refreshAll);
+
+    document.getElementById("reset").addEventListener("click", async () => {
+      if (!confirm("Wirklich alle Daten löschen?")) return;
+      const r = await fetch("/api/admin/reset", { method: "POST" });
+      const d = await r.json();
+      if (d.ok) {
+        refreshAll();
+      }
+    });
+
+    refreshAll();
+  </script>
+</body>
+</html>

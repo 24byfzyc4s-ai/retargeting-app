@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nicht-anonyme Umfrage</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="hero fade-in">
+      <div>
+        <h1>Persönliche Umfrage</h1>
+        <p class="sub">Bitte gib hier zusätzlich deinen Namen an.</p>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <form id="personalForm">
+        <label>Vor- und Nachname
+          <input name="name" required placeholder="Vor- und Nachname" />
+        </label>
+
+        <label>Wohnumfeld
+          <select name="area" required>
+            <option value="">Bitte wählen…</option>
+            <option value="urban">städtisch</option>
+            <option value="suburban">Vorort / Kleinstadt</option>
+            <option value="rural">ländlich</option>
+          </select>
+        </label>
+
+        <label>Bücher im Haushalt
+          <select name="books_home" required>
+            <option value="">Bitte wählen…</option>
+            <option value="0-10">0–10</option>
+            <option value="11-50">11–50</option>
+            <option value="51-200">51–200</option>
+            <option value="200+">200+</option>
+          </select>
+        </label>
+
+        <label>Berufsfeld der Eltern
+          <select name="parents_job" required>
+            <option value="">Bitte wählen…</option>
+            <option value="academia">akademisch / Verwaltung</option>
+            <option value="trade">Handwerk / Industrie</option>
+            <option value="service">Dienstleistung / Einzelhandel</option>
+            <option value="care">Pflege / Soziales</option>
+            <option value="other">sonstiges</option>
+          </select>
+        </label>
+
+        <label>Dein Hauptgerät
+          <select name="device" required>
+            <option value="">Bitte wählen…</option>
+            <option value="iphone">iPhone</option>
+            <option value="android">Android</option>
+            <option value="none">kein Smartphone</option>
+          </select>
+        </label>
+
+        <label>Zukunftsplan
+          <select name="future_plan" required>
+            <option value="">Bitte wählen…</option>
+            <option value="study">Studium</option>
+            <option value="training">Ausbildung</option>
+            <option value="unsure">noch unklar</option>
+          </select>
+        </label>
+
+        <div class="row">
+          <button class="primary" type="submit">Absenden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script>
+    document.getElementById("personalForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fd = new FormData(e.target);
+      const raw = Object.fromEntries(fd.entries());
+      const name = raw.name;
+      delete raw.name;
+
+      await RR.trackFirstEvent("personal_submit");
+      await RR.apiPost("/api/survey/personal", {
+        name,
+        answers: raw
+      });
+
+      window.location.href = "/thanks.html";
+    });
+  </script>
+</body>
+</html>
