@@ -31,12 +31,11 @@
     </div>
   </div>
 
- <script src="/app.js"></script>
-
-<script>
-  RR.ensureSession()
-    .then((sid) => console.log("Session gestartet:", sid))
-    .catch(console.error);
-</script>
+  <script src="/app.js"></script>
+  <script>
+    RR.ensureSession()
+      .then((sid) => console.log("Session gestartet:", sid))
+      .catch(console.error);
+  </script>
 </body>
 </html>
